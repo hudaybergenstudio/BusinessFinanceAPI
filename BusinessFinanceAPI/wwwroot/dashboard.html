@@ -1,0 +1,254 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance ERP Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: #1a1d20;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .nav-link {
+            color: #949ba2;
+            border-radius: 8px;
+            margin: 5px 15px;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+            .nav-link:hover, .nav-link.active {
+                color: white;
+                background: #0d6efd !important;
+            }
+
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 12px;
+        }
+
+        .table {
+            vertical-align: middle;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+            .tab-content.active {
+                display: block;
+                animation: fadeIn 0.3s;
+            }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 sidebar p-0 position-fixed">
+                <div class="p-4 text-center">
+                    <h4 class="fw-bold"><i class="bi bi-cpu-fill text-primary me-2"></i>FINANCE API</h4>
+                </div>
+                <nav class="nav flex-column">
+                    <a class="nav-link active" onclick="showTab('main')"><i class="bi bi-house-door me-2"></i>Обзор</a>
+                    <a class="nav-link" onclick="showTab('income')"><i class="bi bi-graph-up-arrow me-2"></i>Доходы</a>
+                    <a class="nav-link" onclick="showTab('expense')"><i class="bi bi-graph-down-arrow me-2"></i>Расходы</a>
+                    <a class="nav-link" onclick="showTab('credit')"><i class="bi bi-bank me-2"></i>Кредиты</a>
+                </nav>
+            </div>
+
+            <div class="col-md-10 offset-md-2 p-4">
+                <header class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 id="pageTitle">Обзор</h2>
+                    <div id="status" class="badge bg-success">Обновлено: <span id="lastTime">--:--</span></div>
+                </header>
+
+                <div id="tab-main" class="tab-content active">
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-4">
+                            <div class="card p-4 bg-primary text-white">
+                                <h6><i class="bi bi-calendar-check me-2"></i>Прибыль за <span class="month-name">месяц</span></h6>
+                                <h2 id="main-profit">0 ₽</h2>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-4">
+                                <h6 class="text-muted">Всего доходов</h6>
+                                <h2 class="text-success" id="main-total-income">0 ₽</h2>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-4">
+                                <h6 class="text-muted">Всего расходов</h6>
+                                <h2 class="text-danger" id="main-total-exp">0 ₽</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <h5 class="mb-3 text-secondary">История по месяцам</h5>
+                    <div class="card">
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light"><tr><th>Месяц</th><th>Доходы</th><th>Расходы</th><th>Кредиты</th><th>Итог</th></tr></thead>
+                                <tbody id="history-table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-income" class="tab-content">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><div class="card p-3"><h6>За текущий месяц</h6><h3 class="text-success month-income">0 ₽</h3></div></div>
+                        <div class="col-md-6"><div class="card p-3"><h6>Всего за всё время</h6><h3 class="text-success total-income">0 ₽</h3></div></div>
+                    </div>
+                    <div class="d-flex justify-content-end mb-2">
+                        <select class="form-select form-select-sm w-auto shadow-sm" id="sort-income" onchange="renderTables()">
+                            <option value="new">🕒 Сначала новые (по дате)</option>
+                            <option value="max">⬆️ Сначала крупные (Макс. сумма)</option>
+                            <option value="min">⬇️ Сначала мелкие (Мин. сумма)</option>
+                        </select>
+                    </div>
+                    <div class="card"><div class="card-body p-0"><table class="table"><thead class="table-success"><tr><th>ID</th><th>Дата</th><th>Источник</th><th>Сумма</th></tr></thead><tbody id="income-list"></tbody></table></div></div>
+                </div>
+
+                <div id="tab-expense" class="tab-content">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><div class="card p-3"><h6>За текущий месяц</h6><h3 class="text-danger month-exp">0 ₽</h3></div></div>
+                        <div class="col-md-6"><div class="card p-3"><h6>Всего за всё время</h6><h3 class="text-danger total-exp">0 ₽</h3></div></div>
+                    </div>
+                    <div class="d-flex justify-content-end mb-2">
+                        <select class="form-select form-select-sm w-auto shadow-sm" id="sort-expense" onchange="renderTables()">
+                            <option value="new">🕒 Сначала новые (по дате)</option>
+                            <option value="max">⬆️ Сначала дорогие (Макс. сумма)</option>
+                            <option value="min">⬇️ Сначала дешевые (Мин. сумма)</option>
+                        </select>
+                    </div>
+                    <div class="card"><div class="card-body p-0"><table class="table"><thead class="table-danger"><tr><th>ID</th><th>Дата</th><th>Тип</th><th>На что</th><th>Сумма</th></tr></thead><tbody id="expense-list"></tbody></table></div></div>
+                </div>
+
+                <div id="tab-credit" class="tab-content">
+                    <div class="row mb-4">
+                        <div class="col-md-6"><div class="card p-3"><h6>Кредитная нагрузка (Месяц)</h6><h3 class="text-warning month-credit">0 ₽</h3></div></div>
+                        <div class="col-md-6"><div class="card p-3"><h6>Общая сумма кредитов</h6><h3 class="text-warning total-credit">0 ₽</h3></div></div>
+                    </div>
+                    <div class="d-flex justify-content-end mb-2">
+                        <select class="form-select form-select-sm w-auto shadow-sm" id="sort-credit" onchange="renderTables()">
+                            <option value="new">🕒 Сначала новые (по дате)</option>
+                            <option value="max">⬆️ Сначала крупные (Макс. сумма)</option>
+                            <option value="min">⬇️ Сначала мелкие (Мин. сумма)</option>
+                        </select>
+                    </div>
+                    <div class="card"><div class="card-body p-0"><table class="table"><thead class="table-warning"><tr><th>ID</th><th>Банк</th><th>Сумма</th><th>Ставка</th><th>Срок</th><th>Ежем. платеж</th></tr></thead><tbody id="credit-list"></tbody></table></div></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let globalData = null;
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            document.getElementById('pageTitle').innerText = event.currentTarget.innerText;
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch('/api/stats');
+                globalData = await res.json();
+
+                const f = (n) => n.toLocaleString('ru-RU') + ' ₽';
+
+                document.querySelectorAll('.month-name').forEach(e => e.innerText = globalData.thisMonth.monthName);
+                document.getElementById('main-profit').innerText = f(globalData.thisMonth.income - globalData.thisMonth.expenses);
+                document.getElementById('main-total-income').innerText = f(globalData.thisMonth.income);
+                document.getElementById('main-total-exp').innerText = f(globalData.thisMonth.expenses);
+
+                document.getElementById('history-table').innerHTML = globalData.monthlyHistory.map(h => `
+                    <tr><td>${h.monthName}</td><td class="text-success">${f(h.income)}</td><td class="text-danger">${f(h.expenses)}</td><td class="text-warning">${f(h.credits)}</td><td class="fw-bold">${f(h.income - h.expenses)}</td></tr>
+                `).join('');
+
+                const incTxs = globalData.allTransactions.filter(t => t.type === 'income');
+                const expTxs = globalData.allTransactions.filter(t => t.type.startsWith('exp') || t.type === 'expense');
+                const credTxs = globalData.allTransactions.filter(t => t.type === 'credit');
+
+                document.querySelectorAll('.month-income').forEach(e => e.innerText = f(globalData.thisMonth.income));
+                document.querySelectorAll('.total-income').forEach(e => e.innerText = f(incTxs.reduce((a, b) => a + b.amount, 0)));
+
+                document.querySelectorAll('.month-exp').forEach(e => e.innerText = f(globalData.thisMonth.expenses));
+                document.querySelectorAll('.total-exp').forEach(e => e.innerText = f(expTxs.reduce((a, b) => a + b.amount, 0)));
+
+                document.querySelectorAll('.month-credit').forEach(e => e.innerText = f(globalData.thisMonth.credits));
+                document.querySelectorAll('.total-credit').forEach(e => e.innerText = f(credTxs.reduce((a, b) => a + b.amount, 0)));
+
+                document.getElementById('lastTime').innerText = new Date().toLocaleTimeString();
+
+                renderTables();
+            } catch (e) { console.error("Ошибка загрузки:", e); }
+        }
+
+        function renderTables() {
+            if (!globalData) return;
+
+            const f = (n) => n.toLocaleString('ru-RU') + ' ₽';
+            const d = (s) => new Date(s).toLocaleDateString();
+
+            const sortTxs = (txs, sortType) => {
+                let sorted = [...txs];
+                if (sortType === 'max') sorted.sort((a, b) => b.amount - a.amount);
+                else if (sortType === 'min') sorted.sort((a, b) => a.amount - b.amount);
+                else sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+                return sorted;
+            };
+
+            const incSort = document.getElementById('sort-income').value;
+            const incomeTxs = sortTxs(globalData.allTransactions.filter(t => t.type === 'income'), incSort);
+            document.getElementById('income-list').innerHTML = incomeTxs.map(t => `
+                <tr><td>${t.id}</td><td>${d(t.date)}</td><td>${t.category}</td><td class="text-success fw-bold">${f(t.amount)}</td></tr>
+            `).join('');
+
+            const expSort = document.getElementById('sort-expense').value;
+            const expTxs = sortTxs(globalData.allTransactions.filter(t => t.type.startsWith('exp') || t.type === 'expense'), expSort);
+            document.getElementById('expense-list').innerHTML = expTxs.map(t => `
+                <tr><td>${t.id}</td><td>${d(t.date)}</td><td>${t.type === 'exp_fix' ? 'Инфраст.' : 'Опер.'}</td><td>${t.category}</td><td class="text-danger fw-bold">${f(t.amount)}</td></tr>
+            `).join('');
+
+            const credSort = document.getElementById('sort-credit').value;
+            const creditTxs = sortTxs(globalData.allTransactions.filter(t => t.type === 'credit'), credSort);
+            document.getElementById('credit-list').innerHTML = creditTxs.map(t => {
+                const monthly = (t.amount * ((t.interestRate / 12 / 100) * Math.pow(1 + (t.interestRate / 12 / 100), t.loanYears * 12))) / (Math.pow(1 + (t.interestRate / 12 / 100), t.loanYears * 12) - 1);
+                return `<tr><td>${t.id}</td><td>${t.category}</td><td>${f(t.amount)}</td><td>${t.interestRate}%</td><td>${t.loanYears} л.</td><td class="text-warning fw-bold">${f(monthly)}</td></tr>`;
+            }).join('');
+        }
+
+        setInterval(loadData, 5000);
+        loadData();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
